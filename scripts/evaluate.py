@@ -1,4 +1,6 @@
 # scripts/evaluate.py
+import json
+import os
 
 import numpy as np
 import pandas as pd
@@ -37,6 +39,16 @@ def evaluate():
     print(f"Baseline RMSE: {rmse_base:.4f}")
     print(f" Model   RMSE: {rmse_model:.4f}")
     print(f"Direction Accuracy: {direction_acc:.4f}")
+    metrics = {
+        "baseline_rmse": rmse_base,
+        "model_rmse": rmse_model,
+        "direction_accuracy": direction_acc
+    }
 
-if __name__ == "__main__":
-    evaluate()
+    out_dir = os.path.join("reports", "metrics")
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "evaluation_metrics.json"), "w") as f:
+        json.dump(metrics, f, indent=2)
+
+# if __name__ == "__main__":
+#     evaluate()

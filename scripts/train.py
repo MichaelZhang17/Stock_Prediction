@@ -14,7 +14,7 @@ def load_data():
     # Load features table from database
     engine = create_engine(DATABASE_URL)
     df = pd.read_sql("SELECT * FROM daily_features ORDER BY date", engine, parse_dates=['date'])
-    # Create target: next-day close price
+    # Create target: next-day return
     df['target'] = df.groupby('symbol')['C'].pct_change().shift(-1)
     df.dropna(inplace=True)
     feature_cols = ['O', 'H', 'L', 'C', 'V', 'rsi_14', 'sma_20']
@@ -24,6 +24,9 @@ def load_data():
 
 
 def objective(trial):
+    # Load data inside the objective
+    X, y = load_data()
+
     # Suggest hyperparameters
     param = {
         'num_leaves': trial.suggest_int('num_leaves', 31, 255),
@@ -41,46 +44,41 @@ def objective(trial):
     # Time series cross-validation
     tscv = TimeSeriesSplit(n_splits=5)
     rmses = []
-    for train_index, valid_index in tscv.split(X):
-        X_train, X_valid = X[train_index], X[valid_index]
-        y_train, y_valid = y[train_index], y[valid_index]
+    for train_idx, valid_idx in tscv.split(X):
+        X_train, X_valid = X[train_idx], X[valid_idx]
+        y_train, y_valid = y[train_idx], y[valid_idx]
         model = LGBMRegressor(**param)
         model.fit(
-            X_train, y_train,
+            X_train,
+            y_train,
             eval_set=[(X_valid, y_valid)],
             callbacks=[
                 early_stopping(stopping_rounds=50),
                 log_evaluation(period=100)
-            ]
+            ],
         )
         preds = model.predict(X_valid)
-        mse = mean_squared_error(y_valid, preds)
-        rmse = np.sqrt(mse)
+        rmse = np.sqrt(mean_squared_error(y_valid, preds))
         rmses.append(rmse)
 
     # Return average RMSE
-    return sum(rmses) / len(rmses)
+    return float(np.mean(rmses))
 
 
-if __name__ == '__main__':
-    # Load data once
-    X, y = load_data()
-
+def train_and_save(trials: int = 50, model_path: str = 'models/model.pkl'):
     # Create study
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=50, n_jobs=1)
+    study.optimize(objective, n_trials=trials)
 
-    print("Best RMSE: {:.4f}".format(study.best_value))
-    print("Best params:", study.best_params)
-
-    # Train final model on all data
+    # Train final model on all data using best params
+    X, y = load_data()
     best_params = study.best_params
     best_params.update({'objective': 'regression', 'random_state': 42})
     final_model = LGBMRegressor(**best_params)
     final_model.fit(X, y)
 
     # Save the tuned model
-    os.makedirs('models', exist_ok=True)
-    model_path = 'models/model.pkl'
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump(final_model, model_path)
     print(f"Tuned model saved to {model_path}")
+

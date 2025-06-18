@@ -43,5 +43,5 @@ def load_raw_to_db(raw_folder="data/raw"):
         else:
             print("Index already exists, skipping.")
 
-if __name__ == "__main__":
-    load_raw_to_db()
+# if __name__ == "__main__":
+#     load_raw_to_db()

@@ -27,5 +27,5 @@ def build_features():
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE daily_features ADD INDEX idx_feat_sym_date (symbol(16), date);"))
 
-if __name__ == "__main__":
-    build_features()
+# if __name__ == "__main__":
+#     build_features()

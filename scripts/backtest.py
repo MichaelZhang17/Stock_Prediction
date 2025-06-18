@@ -1,4 +1,5 @@
 # scripts/backtest.py
+import os
 
 import numpy as np
 import pandas as pd
@@ -48,8 +49,13 @@ def backtest(threshold=0.0, initial_capital=1_000_000):
     print(f"Annualized Sharpe: {sharpe:.2f}")
     print(f"Max drawdown:   {((daily['nav'].cummax() - daily['nav']) / daily['nav'].cummax()).max() * 100:.1f}%")
 
+    out_dir = os.path.join("reports", "backtest")
+    os.makedirs(out_dir, exist_ok=True)
+    csv_path = os.path.join(out_dir, "results.csv")
+    daily.reset_index()[['date', 'nav']].to_csv(csv_path, index=False)
+
     return daily
 
 
-if __name__ == "__main__":
-    nav = backtest(threshold=0.0)
+# if __name__ == "__main__":
+#     nav = backtest(threshold=0.0)
