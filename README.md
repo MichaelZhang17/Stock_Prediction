@@ -18,8 +18,34 @@ This project provides an end-to-end, one-command workflow that handles data acqu
 8. **Strategy Backtesting**: Daily portfolio NAV, total return, Sharpe, max drawdown  
 9. **Backtest Visualization**: Equity curve & drawdown curve  
 10. **Signal Generation**: Create BUY/SELL signals based on threshold
-
+11. 
 ---
+
+## Creating Your `config.py`
+
+In your project root, create a file named `config.py` with the following three constants:
+
+```python
+import os
+
+# 1. Database connection URL
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost:5432/your_db")
+
+# 2. Alpha Vantage API key
+ALPHA_API_KEY = os.getenv("ALPHA_API_KEY", "")
+
+# 3. Alpha Vantage base URL
+ALPHA_BASE_URL = os.getenv("ALPHA_BASE_URL", "https://www.alphavantage.co")
+```
+
+DATABASE_URL: Points your code to where price and feature data are stored.
+
+ALPHA_API_KEY: Grants access to Alpha Vantage’s market data API.
+
+ALPHA_BASE_URL: Lets you switch between endpoints or staging servers if needed.
+
+With just a valid database connection and your Alpha Vantage API key (plus the base URL), you have everything you need to fetch price data, compute features, and run your model end to end.
+
 
 ## Dependencies
 
@@ -91,5 +117,7 @@ This command executes the full pipeline in order, from database setup through da
 - **Live Trading Integration**  
   Extend `generate_signals()` in `main.py` to send orders via your broker API.  
 - **Report Export**  
-  Add PDF/HTML export logic or integrate with Jupyter notebooks.  
+  Add PDF/HTML export logic or integrate with Jupyter notebooks.
+
+
 
