@@ -118,6 +118,73 @@ This command executes the full pipeline in order, from database setup through da
   Extend `generate_signals()` in `main.py` to send orders via your broker API.  
 - **Report Export**  
   Add PDF/HTML export logic or integrate with Jupyter notebooks.
+# Stock Prediction Pipeline Workflow
+
+Below is the end-to-end workflow for the **Stock_Prediction** project, laid out as a sequence of discrete steps.
+
+1. **Configure Environment**  
+   - Create `config.py` with three constants:  
+     ```python
+     DATABASE_URL     # your database connection string  
+     ALPHA_API_KEY    # your Alpha Vantage API key  
+     ALPHA_BASE_URL   # Alpha Vantage endpoint URL  
+     ```
+   - Ensure these are loaded from environment variables to keep credentials out of version control.
+
+2. **Initialize Database**  
+   - Run `scripts/create_db.py` to create the PostgreSQL schema.  
+   - Tables include raw price storage, feature tables, and results tables.
+
+3. **Fetch Raw Market Data**  
+   - Execute `scripts/fetch_data.py`.  
+   - For each symbol in your list, pull time-series data from Alpha Vantage and write CSV files to disk.
+
+4. **Load Data into SQL (ETL)**  
+   - Run `scripts/etl.py` to ingest the downloaded CSVs into your database tables.  
+   - Centralizes all historic price data for downstream processing.
+
+5. **Compute Features**  
+   - Launch `scripts/features.py`.  
+   - Calculate technical indicators (e.g. SMA, EMA, RSI) and write feature vectors back into SQL.
+
+6. **Visualize Data & Features**  
+   - Use `scripts/visualize.py` to generate exploratory plots (time-series charts, histograms, correlation heatmaps).  
+   - Inspect and validate feature distributions.
+
+7. **Model Training & Hyperparameter Tuning**  
+   - Run `scripts/train.py` with LightGBM + Optuna:  
+     - Specify number of trials, early-stopping criteria, etc.  
+   - The script saves the best model object and its evaluation metrics (RMSE, accuracy) to JSON.
+
+8. **Evaluate Model Performance**  
+   - Execute `scripts/evaluate.py`.  
+   - Load the saved metrics JSON and print or tabulate results (e.g. validation vs. test performance).
+
+9. **Backtest Strategy**  
+   - Run `scripts/backtest.py`.  
+   - Simulate daily portfolio returns, compute performance statistics (Sharpe ratio, max drawdown, total return).  
+   - Output daily NAV series as a CSV.
+
+10. **Backtest Visualization**  
+    - Use `scripts/visualize_backtest.py` to plot:  
+      - Equity curve  
+      - Drawdown curve  
+    - Quickly assess risk-return characteristics visually.
+
+11. **Generate Live Signals**  
+    - Finally, run the orchestrator `main.py`:  
+      ```bash
+      python main.py \
+        --symbols TSLA NVDA NFLX META \
+        --trials 75 \
+        --threshold 0.015 \
+        --capital 250000
+      ```  
+    - This single command covers steps 3–10 and produces next-day BUY/SELL signals in JSON or console output.
+
+---
+
+Each step is modular and lives under the `scripts/` directory; all reports and charts are stored in `reports/`. You can run any step independently for debugging or re-running specific stages without re-processing the entire pipeline.
 
 
 
