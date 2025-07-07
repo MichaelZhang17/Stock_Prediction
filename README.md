@@ -1,4 +1,4 @@
-# Automated Stock Prediction & Trading Strategy Pipeline
+# AlphaQuant: an Automated Stock Prediction & Trading Strategy Pipeline
 
 ## Project Overview
 
